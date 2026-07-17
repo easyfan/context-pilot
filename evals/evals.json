@@ -1,0 +1,62 @@
+{
+  "skill_name": "context-pilot",
+  "evals": [
+    {
+      "id": 0,
+      "name": "clean-boundary-clear",
+      "prompt": "我们这个 session 干了很久，context 大概到 75% 了。我想 /clear 之后接着做 Phase 2，但怕丢东西。帮我判断现在能不能安全 clear，能的话把该准备的都准备好。项目根目录就是当前工作目录。\n\n本 session 到目前为止发生的事（供你判断）：\n- 任务：把我们 Flask 应用的存储层从 SQLite 迁到 Postgres，分两个 Phase。Phase 1 = schema + models，Phase 2 = 重写查询层（repositories/user_repo.py 和 repositories/order_repo.py）。\n- Phase 1 已完成且验证过：alembic migration 跑通，全部 47 个单测通过。\n- 我们讨论后定了用 psycopg3 直连而不是 SQLAlchemy async——中途认真考虑过 asyncpg，最后否掉了，因为它和现有 ORM 兼容层冲突太大。这个决定只在对话里说了，没写进任何文件。\n- 踩过一个坑：JSONB 列迁移时 json.dumps 遇到 datetime 直接炸了，后来加了自定义 encoder 才过。这个也没记在任何地方。\n- 有一处没验证完：connection pool 的配置（config/db.py 里 pool_size 那几行）改了但从来没做过负载测试，不确定参数合不合理。\n- 我口头说过一个要求：这次迁移绝对不要动 auth 模块，那块另有人在改。\n- 下一步就是开始 Phase 2，从 repositories/user_repo.py 开始改。",
+      "expected_output": "判定为可安全 clear；写出 .claude/context-handoff.md（不污染 CLAUDE.md 等长期文件），包含冷读前导、六成分（含被否决的 asyncpg 及理由、JSONB datetime 坑、pool 未验证状态、auth 口头约束）、session map、审计记录；明确告知用户现在可以按 /clear。",
+      "assertions": [
+        "A handoff/checkpoint file is written to .claude/context-handoff.md (or clearly equivalent) under the project root",
+        "The handoff opens with a cold-reader preamble (restate + wait for confirmation, ask on ambiguity)",
+        "Decisions record psycopg3 AND the rejected asyncpg alternative with rationale",
+        "The JSONB/datetime pitfall and its fix are recorded",
+        "The pool config is recorded as changed-but-never-load-tested",
+        "The verbal auth-module constraint is recorded",
+        "A session map with per-arc lines and transcript path exists",
+        "The reply gives an explicit safe-to-/clear verdict",
+        "Session state is not written into long-lived files like CLAUDE.md"
+      ],
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "t-small-finish",
+      "prompt": "这个 session 的活基本干完了：刚把 utils/retry.py 的重试逻辑修好，测试也全过了。还剩最后一件事——往 CHANGELOG.md 补一条记录，然后跑一遍 lint 确认没问题。不过 context 已经到 82% 了，有点慌，要不要先 clear 一下保险？帮我看看怎么处理。",
+      "expected_output": "判定 t 小：不 clear 也不写 handoff，直接把剩下的两步干完；论证基于 t 小（转移纯开销）而非「余量还够」。",
+      "assertions": [
+        "Recommends simply finishing the two remaining small steps rather than clearing",
+        "No handoff file written, no transfer ceremony",
+        "Core justification is t-small / transfer-is-overhead, NOT 'headroom is still enough'; bonus for noting fat context costs tokens every turn"
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "entangled-gray-zone",
+      "prompt": "context 到 85% 了，清一下吧，然后接着查这个 bug。\n\n现在的状况：我们在查一个偶发的订单重复扣款 bug，怀疑是 race condition。目前有三个假设都还活着：假设 A（Redis 锁超时太短）——做了一半的验证，日志看了一部分但还没看完，初步像是被部分排除了但说不死；假设 B（webhook 重放没去重）——完全没验证；假设 C（数据库事务隔离级别问题）——依赖我们刚才在对话里逐行对比的那两段 stack trace，对比到一半，结论还在脑子里没落地。下一步本来是接着把那两段 stack trace 对比完。",
+      "expected_output": "判定不可安全 clear；点名 trace 对比中间态未落盘；建议先干到真边界或退 auto-compact；主动落盘稳定状态而不是让用户重新粘贴信息。",
+      "assertions": [
+        "Does NOT endorse clearing right now",
+        "Identifies the in-conversation half-compared stack-trace reasoning as the blocker",
+        "Recommends working to a real boundary and/or auto-compact fallback",
+        "Does not ask the user to re-supply info already in conversation; proactively externalizes stable hypothesis state itself"
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "clear-then-phrase",
+      "prompt": "活到一个段落了，帮我 clear 掉然后继续下一步：实现灰度第一档（5%）的配置，在 rollout/config.yaml 里。\n\n本 session 情况：\n- 任务：给结算服务加 feature-flag 灰度发布。\n- 已完成且验证：flag 脚手架代码已合并，CI 全绿。\n- 我们讨论定了分三档灰度 5%→25%→100%，每档观察 48 小时——理由是结算路径出错代价高；当时也考虑过一把梭直接全量，被否了，因为回滚窗口太窄。这些只在对话里说过。\n- 没有别的悬着的事。",
+      "expected_output": "识别 clear-then 语式并执行协议：写 handoff（下一步具体到 rollout/config.yaml 5% 档、三档决策+被否的一把梭）、冷读前导；明确说明模型无法自己 clear、须用户按 /clear。",
+      "assertions": [
+        "A handoff file is written to .claude/context-handoff.md or equivalent",
+        "Next step names rollout/config.yaml and the 5% stage concretely",
+        "Staged rollout decision AND rejected big-bang alternative (with reason) are recorded",
+        "Reply makes clear the USER must press /clear; the assistant cannot",
+        "Cold-reader preamble present"
+      ],
+      "files": []
+    }
+  ]
+}
