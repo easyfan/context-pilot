@@ -79,6 +79,8 @@ cd context-pilot && ./install.sh          # --dry-run aperçu, --uninstall retra
 }
 ```
 
+> **Remarque pour les modèles à fenêtre 1M :** `context_window` vaut `200000` par défaut. Si votre modèle dispose d'une fenêtre de contexte de 1M de tokens (p. ex. les identifiants de modèle `[1m]`), réglez-le sur `1000000` — avec la valeur par défaut, les alertes se déclenchent bien trop tôt et peuvent indiquer une utilisation supérieure à 100 %.
+
 Fenêtre de fraîcheur de livraison : `CONTEXT_PILOT_FRESH_SECONDS`,
 défaut 900.
 

@@ -88,6 +88,8 @@ Optional `~/.claude/context-pilot/config.json`:
 }
 ```
 
+> **Note for 1M-window models:** `context_window` defaults to `200000`. If your model has a 1M-token context window (e.g. `[1m]` model IDs), set it to `1000000` — with the default, alerts fire far too early and can report usage above 100%.
+
 Delivery freshness window (how recent a handoff must be to be injected):
 `CONTEXT_PILOT_FRESH_SECONDS`, default 900.
 

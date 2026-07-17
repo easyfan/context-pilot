@@ -78,6 +78,8 @@ Optionale `~/.claude/context-pilot/config.json`:
 }
 ```
 
+> **Hinweis für Modelle mit 1M-Fenster:** `context_window` ist standardmäßig `200000`. Wenn Ihr Modell ein Kontextfenster von 1M Tokens hat (z. B. `[1m]`-Modell-IDs), setzen Sie den Wert auf `1000000` — mit dem Standardwert werden Warnungen viel zu früh ausgelöst und können eine Auslastung über 100 % melden.
+
 Zustellungs-Frischefenster: `CONTEXT_PILOT_FRESH_SECONDS`, Standard 900.
 
 ## Dateien

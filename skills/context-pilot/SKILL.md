@@ -1,6 +1,6 @@
 ---
 name: context-pilot
-description: Safe-to-forget protocol for the context window — decide at a task boundary whether to keep working, /clear with a self-sufficient handoff, or fall back to auto-compact; then write the handoff checkpoint through a six-component audit so nothing needed is lost when the context is destroyed. Use this skill whenever a [context-pilot] alert is injected into the conversation, whenever the user asks to prepare for /clear, mentions "handoff", "checkpoint before clear", "can I clear safely", says the context is getting full or auto-compact is approaching, or when a context-handoff.md file is present in the project. Also use it whenever the user says "clear, then continue with X" or any clear-and-continue phrasing, weighs compact vs clear, or asks "what would we lose if I cleared right now".
+description: Safe-to-forget protocol for the context window — decide at a task boundary whether to keep working, /clear with a self-sufficient handoff, or fall back to auto-compact; then write the handoff checkpoint through a six-component audit so nothing needed is lost when the context is destroyed. Use this skill whenever a [context-pilot] alert is injected into the conversation, whenever the user asks to prepare for /clear, mentions "handoff", "checkpoint before clear", "can I clear safely", says the context is getting full or auto-compact is approaching, or when a context-handoff.md file is present in the project. For "clear, then X" requests use the /clear-then command instead. Also use this skill when the user weighs compact vs clear, or asks "what would we lose if I cleared right now".
 ---
 
 # context-pilot — the safe-to-forget protocol
@@ -169,11 +169,23 @@ flips to "do not clear" per Step 1.
 If you are reading a fresh `context-handoff.md` (via injection or because
 the user pointed you at it): follow its preamble — restate, wait for
 confirmation, distrust ambiguity. Once work has genuinely resumed,
-**delete the handoff file**. A consumed handoff left on disk is
-indistinguishable from a pending one and will cause false re-injection in
-later sessions. Reach for the transcript in the session map only when you
-hit a genuine "why did they do this" gap — routinely re-reading the old
-transcript re-imports the very context the clear was meant to shed.
+**rename the handoff file** to `context-handoff.last.md` (the
+SessionStart hook does this automatically; if the hook ran, the file is
+already renamed and you will not find the original). Do not delete it
+outright — the `.last.md` copy remains recoverable if injection failed.
+A consumed handoff left under its original name is indistinguishable from
+a pending one and will cause false re-injection in later sessions. Reach
+for the transcript in the session map only when you hit a genuine "why did
+they do this" gap — routinely re-reading the old transcript re-imports the
+very context the clear was meant to shed.
+
+> **Note on hook visibility**: the SessionStart hook injects the handoff
+> via `additionalContext`, a channel that is not rendered to the user as a
+> visible confirmation. The expected signal that injection succeeded is the
+> new session's opening message restating the goal and next step — there is
+> no separate pop-up or banner. If the new session does not restate, check
+> whether `context-handoff.last.md` exists (hook consumed but injection
+> may have failed); if neither file exists, the hook did not fire.
 
 ## Notes
 
@@ -191,3 +203,9 @@ transcript re-imports the very context the clear was meant to shed.
   phrase no model can execute atomically, because clearing destroys the
   speaker) becomes: write the handoff around X, pass the gate, then hand
   the `/clear` keystroke to the human.
+- **Context window configuration**: `context_sample.sh` defaults to
+  `context_window: 200000`. If you are using a model with a 1M token
+  context window, this default will cause the alert to fire at roughly
+  18–20% actual usage, producing misleading warnings. Set the correct
+  value in `~/.claude/context-pilot/config.json` — see README
+  §Configuration for the full config schema.
