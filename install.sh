@@ -35,6 +35,29 @@ SETTINGS="$CLAUDE_DIR/settings.json"
 
 run() { if [ "$DRY_RUN" = 1 ]; then echo "[dry-run] $*"; else "$@"; fi; }
 
+CHANGED=0
+
+# Copy only when content differs, so repeat installs report 0 changed files.
+copy_file() {
+  if [ -f "$2" ] && cmp -s "$1" "$2"; then return 0; fi
+  if [ "$DRY_RUN" = 1 ]; then
+    echo "[dry-run] cp $1 $2"
+  else
+    cp "$1" "$2"
+  fi
+  CHANGED=$((CHANGED + 1))
+}
+
+remove_path() {
+  [ -e "$1" ] || return 0
+  if [ "$DRY_RUN" = 1 ]; then
+    echo "[dry-run] rm -rf $1"
+  else
+    rm -rf "$1"
+    echo "Removed $1"
+  fi
+}
+
 # Hook (de)registration rewrites settings.json via python3 — fail early with
 # a recovery path instead of dying inside the heredoc under set -e.
 if [ "$DRY_RUN" != 1 ] && ! command -v python3 >/dev/null 2>&1; then
@@ -139,22 +162,29 @@ PY
 if [ "$UNINSTALL" = 1 ]; then
   echo "Uninstalling context-pilot from $CLAUDE_DIR ..."
   deregister_hooks
-  run rm -rf "$SKILL_DST" "$CLAUDE_DIR/context-pilot"
-  run rm -f "$CMD_DST"
+  remove_path "$SKILL_DST"
+  remove_path "$CLAUDE_DIR/context-pilot"
+  remove_path "$CMD_DST"
   echo "Done. Handoff/state files in projects (if any) were left untouched."
   exit 0
 fi
 
 echo "Installing context-pilot into $CLAUDE_DIR ..."
 run mkdir -p "$SKILL_DST" "$HOOK_DIR" "$CLAUDE_DIR/commands"
-run cp "$SCRIPT_DIR/skills/context-pilot/SKILL.md" "$SKILL_DST/SKILL.md"
-run cp "$SCRIPT_DIR/commands/clear-then.md" "$CMD_DST"
-run cp "$SCRIPT_DIR/hooks/context_deliver.sh" "$HOOK_DIR/context_deliver.sh"
-run cp "$SCRIPT_DIR/hooks/context_sample.sh" "$HOOK_DIR/context_sample.sh"
+copy_file "$SCRIPT_DIR/skills/context-pilot/SKILL.md" "$SKILL_DST/SKILL.md"
+copy_file "$SCRIPT_DIR/commands/clear-then.md" "$CMD_DST"
+copy_file "$SCRIPT_DIR/hooks/context_deliver.sh" "$HOOK_DIR/context_deliver.sh"
+copy_file "$SCRIPT_DIR/hooks/context_sample.sh" "$HOOK_DIR/context_sample.sh"
 run chmod +x "$HOOK_DIR/context_deliver.sh" "$HOOK_DIR/context_sample.sh"
 register_hooks
 
-echo "Done. Components:"
+if [ "$DRY_RUN" = 1 ]; then
+  echo "$CHANGED file(s) would be modified (plus settings.json hook registration)."
+  exit 0
+fi
+
+echo "Done! $CHANGED file(s) installed."
+echo "Components:"
 echo "  skill   : $SKILL_DST/SKILL.md"
 echo "  command : $CMD_DST  (/clear-then <next step>)"
 echo "  hooks   : $HOOK_DIR (SessionStart delivery + PostToolUse sampling)"
