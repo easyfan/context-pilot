@@ -1,6 +1,6 @@
 {
   "name": "context-pilot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Safe-to-forget protocol for the context window — decide at task boundaries between clear-with-handoff and auto-compact, write a self-sufficient checkpoint, and auto-deliver it into the cold session after /clear",
   "author": {
     "name": "easyfan",

@@ -64,6 +64,19 @@ git clone https://github.com/easyfan/context-pilot.git
 cd context-pilot && ./install.sh          # --dry-run предпросмотр, --uninstall удаление
 ```
 
+Ручная регистрация hook'ов (если `install.sh` прервался из-за отсутствия python3): добавьте следующее в `~/.claude/settings.json`:
+
+```json
+"hooks": {
+  "SessionStart": [
+    { "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_deliver.sh" } ] }
+  ],
+  "PostToolUse": [
+    { "matcher": "*", "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_sample.sh" } ] }
+  ]
+}
+```
+
 ## Конфигурация
 
 Необязательный `~/.claude/context-pilot/config.json`:

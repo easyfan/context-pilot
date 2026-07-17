@@ -75,6 +75,19 @@ git clone https://github.com/easyfan/context-pilot.git
 cd context-pilot && ./install.sh          # --dry-run to preview, --uninstall to remove
 ```
 
+Manual hook registration (if `install.sh` aborts because python3 is missing): merge the following into `~/.claude/settings.json`:
+
+```json
+"hooks": {
+  "SessionStart": [
+    { "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_deliver.sh" } ] }
+  ],
+  "PostToolUse": [
+    { "matcher": "*", "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_sample.sh" } ] }
+  ]
+}
+```
+
 ## Configuration
 
 Optional `~/.claude/context-pilot/config.json`:
@@ -102,8 +115,10 @@ Delivery freshness window (how recent a handoff must be to be injected):
    you it is safe.
 3. You press `/clear`.
 4. The new session starts with the handoff injected, restates its
-   understanding in 2–3 lines, and waits for your go-ahead — then continues
-   with a near-empty, clean context.
+   understanding in 2–3 lines, and waits for your go-ahead — or, if the
+   handoff was written by `/clear-then` (it carries `auto_proceed: true`),
+   begins the named next step right after restating, no wait — then
+   continues with a near-empty, clean context.
 
 ## Files
 

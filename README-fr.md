@@ -66,6 +66,19 @@ git clone https://github.com/easyfan/context-pilot.git
 cd context-pilot && ./install.sh          # --dry-run aperçu, --uninstall retrait
 ```
 
+Enregistrement manuel des hooks (si `install.sh` s'arrête faute de python3) : fusionnez ce qui suit dans `~/.claude/settings.json` :
+
+```json
+"hooks": {
+  "SessionStart": [
+    { "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_deliver.sh" } ] }
+  ],
+  "PostToolUse": [
+    { "matcher": "*", "hooks": [ { "type": "command", "command": "$HOME/.claude/context-pilot/hooks/context_sample.sh" } ] }
+  ]
+}
+```
+
 ## Configuration
 
 `~/.claude/context-pilot/config.json` (optionnel) :

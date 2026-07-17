@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "context-pilot",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Context-window pilot: samples context utilization (PostToolUse), injects a boundary-evaluation alert past 70%, gates /clear behind a six-component self-sufficiency audit (skill + /clear-then command), and auto-delivers the handoff into the cold session via a source-agnostic SessionStart hook with consume-once semantics.",
       "category": "workflow",
       "source": {

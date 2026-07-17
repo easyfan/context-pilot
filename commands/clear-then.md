@@ -25,6 +25,13 @@ already in context), with two specializations:
    cannot be externalized cleanly, say so and recommend the alternative
    (work to a real boundary, or auto-compact) — do not write a handoff that
    pretends to be complete just because the user asked to clear.
+3. **Mark the handoff auto-proceed** — after writing it, and only if the
+   self-sufficiency test passed: prepend `auto_proceed: true` as the first
+   line of the handoff file (above the `# Context Handoff` heading). The
+   user has already named the next step in $ARGUMENTS, so the SessionStart
+   hook will tell the incoming session to restate and then begin
+   immediately, skipping the confirmation wait. If the test did not pass,
+   do not write the flag.
 
 End with one short paragraph: the verdict, where the handoff is, and — if
 the gate passed — that it is now safe to press `/clear`.

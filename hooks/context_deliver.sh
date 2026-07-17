@@ -24,6 +24,13 @@
 # ask rather than guess on ambiguity — this converts the "confident misreading"
 # silent failure into a clarifying question.
 #
+# auto_proceed exception: when the handoff's first line is `auto_proceed: true`
+# (written by /clear-then only after the self-sufficiency gate passed), the
+# restate stays — it is the misreading barrier — but the confirmation WAIT is
+# waived: the user already dictated the next step when they issued /clear-then,
+# so a second confirmation is pure friction. A handoff without the flag (plain
+# context-pilot, or hand-written) keeps the full wait-for-confirm path.
+#
 # Env overrides (tests):
 #   CONTEXT_PILOT_CWD            force project dir instead of reading stdin
 #   CONTEXT_PILOT_FRESH_SECONDS  freshness window (default 900)
@@ -70,13 +77,30 @@ except Exception:
 if age > fresh:
     sys.exit(0)
 
+# auto_proceed: flag on the handoff's first line, written by /clear-then only
+# after the gate passed — the user has already named the next step, so the
+# confirmation wait (not the restate) is waived.
+first_line = text.split("\n", 1)[0].strip()
+if first_line == "auto_proceed: true":
+    first_turn = (
+        "FIRST TURN PROTOCOL: restate in 2-3 lines your understanding of the "
+        "goal and the next step, then begin that step immediately — the user "
+        "already specified it via /clear-then; no confirmation wait is "
+        "required. "
+    )
+else:
+    first_turn = (
+        "FIRST TURN PROTOCOL: restate in 2-3 lines your understanding of the "
+        "goal and the next step, then wait for the user to confirm before "
+        "doing anything else. "
+    )
+
 preamble = (
     "[context-pilot] This session follows a deliberate /clear; the handoff "
     "below is your entire inherited memory (the previous context is gone, but "
     "its transcript survives on disk — see the handoff's Session map). "
-    "FIRST TURN PROTOCOL: restate in 2-3 lines your understanding of the goal "
-    "and the next step, then wait for the user to confirm before doing "
-    "anything else. If any pointer or decision below is ambiguous, ask the "
+    + first_turn +
+    "If any pointer or decision below is ambiguous, ask the "
     "user — do not fill gaps from plausibility. The handoff file has been "
     "consumed (renamed to context-handoff.last.md); do not look for it.\n\n"
 )

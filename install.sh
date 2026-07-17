@@ -35,10 +35,19 @@ SETTINGS="$CLAUDE_DIR/settings.json"
 
 run() { if [ "$DRY_RUN" = 1 ]; then echo "[dry-run] $*"; else "$@"; fi; }
 
+# Hook (de)registration rewrites settings.json via python3 — fail early with
+# a recovery path instead of dying inside the heredoc under set -e.
+if [ "$DRY_RUN" != 1 ] && ! command -v python3 >/dev/null 2>&1; then
+  echo "[context-pilot] ERROR: python3 not found. Hook registration requires python3." >&2
+  echo "[context-pilot] Install python3 and re-run, or manually add the hooks to settings.json." >&2
+  echo "[context-pilot] See README 'Manual hook registration' for the JSON snippet." >&2
+  exit 1
+fi
+
 register_hooks() {
   if [ "$DRY_RUN" = 1 ]; then echo "[dry-run] register hooks in $SETTINGS"; return; fi
   SETTINGS="$SETTINGS" HOOK_DIR="$HOOK_DIR" MODE="add" python3 <<'PY'
-import json, os
+import json, os, sys
 
 settings_path = os.environ["SETTINGS"]
 hook_dir = os.environ["HOOK_DIR"]
@@ -47,8 +56,13 @@ mode = os.environ["MODE"]
 try:
     with open(settings_path) as f:
         s = json.load(f)
-except Exception:
+except FileNotFoundError:
     s = {}
+except json.JSONDecodeError as e:
+    print(f"[context-pilot] ERROR: {settings_path} exists but is not valid JSON: {e}", file=sys.stderr)
+    print("[context-pilot] Aborting hook registration to avoid overwriting your settings.", file=sys.stderr)
+    print(f"[context-pilot] Fix or remove {settings_path} and re-run install.sh.", file=sys.stderr)
+    sys.exit(1)
 
 hooks = s.setdefault("hooks", {})
 
